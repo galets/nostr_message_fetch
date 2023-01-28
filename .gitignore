@@ -4,3 +4,10 @@
 .idea
 .metadata
 nostr_message_fetch.iml
+build
+
+# unsupported platforms
+ios
+macos
+web
+windows
