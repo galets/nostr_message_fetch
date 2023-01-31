@@ -76,7 +76,10 @@ class Fetcher {
     print('starting fetcher...');
     _relay.connect();
 
-    final filter = Filter(kinds: [4], authors: _config.senders.isEmpty ? null : _config.senders.keys.toList());
+    final filter = Filter(
+        kinds: [4],
+        p: [getPublicKeyFromPrivate(_config.privateKey)],
+        authors: _config.senders.isEmpty ? null : _config.senders.keys.toList());
 
     _relay.stream.whereIsEvent().listen((event) async {
       print('Received event from: ${event.pubkey}');
@@ -116,9 +119,17 @@ class Fetcher {
     return true;
   }
 
-  void stop() {
+  Future<void> stop() async {
     if (_relay.isConnected) {
-      _relay.disconnect();
+      await _relay.disconnect();
+    }
+  }
+
+  Future<void> refreshConnection() async {
+    if (!_relay.isConnected) {
+      print("Relay was disconnected, will restart");
+      await stop();
+      await start(await loadConfig());
     }
   }
 }

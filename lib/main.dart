@@ -53,6 +53,18 @@ class LoadingWidget extends StatefulWidget {
 }
 
 class _LoadingWidgetState extends State<LoadingWidget> {
+  Future<void> _initTasks() async {
+    final t = getTaskService();
+    await t.start();
+    final config = await loadConfig();
+    final fetcher = getFetcher();
+    await fetcher.start(config);
+    final notifyPort = t.notifyPort;
+    if (notifyPort != null) {
+      notifyPort.listen((message) => fetcher.refreshConnection());
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -63,12 +75,7 @@ class _LoadingWidgetState extends State<LoadingWidget> {
     final t = getTaskService();
     t.init();
 
-    t
-        .start()
-        .catchError((e) => false)
-        .then((_) => loadConfig())
-        .then((config) => getFetcher().start(config))
-        .then((result) => Navigator.of(context).pushReplacementNamed("/home"));
+    _initTasks().then((_) => Navigator.of(context).pushReplacementNamed("/home"));
   }
 
   @override

@@ -3,8 +3,9 @@
 .flutter-plugins-dependencies
 .idea
 .metadata
-nostr_message_fetch.iml
+.vscode
 build
+nostr_message_fetch.iml
 
 # unsupported platforms
 ios

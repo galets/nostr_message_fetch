@@ -3,13 +3,14 @@ import 'dart:isolate';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class TaskService {
+  ReceivePort? notifyPort;
+
   void init() {
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
         channelId: 'foreground_task',
         channelName: 'Foreground Task Icon',
-        channelDescription:
-            'This notification icon is necessary to keep an app running.',
+        channelDescription: 'This notification icon is necessary to keep an app running.',
         channelImportance: NotificationChannelImportance.LOW,
         priority: NotificationPriority.LOW,
         visibility: NotificationVisibility.VISIBILITY_SECRET,
@@ -25,8 +26,8 @@ class TaskService {
         playSound: false,
       ),
       foregroundTaskOptions: const ForegroundTaskOptions(
-        interval: 0,
-        isOnceEvent: true,
+        interval: 30000,
+        isOnceEvent: false,
         autoRunOnBoot: true,
         allowWakeLock: true,
         allowWifiLock: true,
@@ -40,8 +41,7 @@ class TaskService {
     }
 
     if (!await FlutterForegroundTask.canDrawOverlays) {
-      final isGranted =
-          await FlutterForegroundTask.openSystemAlertWindowSettings();
+      final isGranted = await FlutterForegroundTask.openSystemAlertWindowSettings();
       if (!isGranted) {
         print('SYSTEM_ALERT_WINDOW permission denied!');
         return false;
@@ -59,6 +59,9 @@ class TaskService {
         callback: startCallback,
       );
     }
+
+    notifyPort = await FlutterForegroundTask.receivePort;
+
     return true;
   }
 }
@@ -73,7 +76,11 @@ class MyTaskHandler extends TaskHandler {
   Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {}
 
   @override
-  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {}
+  Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
+    if (sendPort != null) {
+      sendPort.send("ping");
+    }
+  }
 
   @override
   Future<void> onDestroy(DateTime timestamp, SendPort? sendPort) async {}
