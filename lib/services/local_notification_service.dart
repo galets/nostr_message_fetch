@@ -9,8 +9,9 @@ class LocalNotificationService {
 
   Future<void> intialize() async {
     tz.initializeTimeZones();
-    const AndroidInitializationSettings androidInitializationSettings =
-        AndroidInitializationSettings('@mipmap/ic_received_message');
+    const AndroidInitializationSettings androidInitializationSettings = AndroidInitializationSettings(
+      '@mipmap/ic_received_message',
+    );
 
     final iosInitializationSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -31,8 +32,7 @@ class LocalNotificationService {
 
   Future<void> requestPermissions() async {
     final androidImplementation =
-        _localNotificationService.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+        _localNotificationService.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     final bool? granted = await androidImplementation?.requestPermission();
     if (true != granted) {
       print("Local notification permissions not granted");
@@ -40,12 +40,13 @@ class LocalNotificationService {
   }
 
   Future<NotificationDetails> _notificationDetails() async {
-    const AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails('channel_id', 'channel_name',
-            channelDescription: 'description',
-            importance: Importance.max,
-            priority: Priority.max,
-            playSound: true);
+    const AndroidNotificationDetails androidNotificationDetails = AndroidNotificationDetails(
+        'channel_id', 'channel_name',
+        channelDescription: 'description',
+        importance: Importance.max,
+        priority: Priority.max,
+        playSound: true,
+        icon: '@mipmap/ic_received_message');
 
     const iosNotificationDetails = DarwinNotificationDetails();
 
@@ -65,10 +66,7 @@ class LocalNotificationService {
   }
 
   Future<void> showScheduledNotification(
-      {required int id,
-      required String title,
-      required String body,
-      required int seconds}) async {
+      {required int id, required String title, required String body, required int seconds}) async {
     final details = await _notificationDetails();
     await _localNotificationService.zonedSchedule(
       id,
@@ -80,23 +78,17 @@ class LocalNotificationService {
       ),
       details,
       androidAllowWhileIdle: true,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
   Future<void> showNotificationWithPayload(
-      {required int id,
-      required String title,
-      required String body,
-      required String payload}) async {
+      {required int id, required String title, required String body, required String payload}) async {
     final details = await _notificationDetails();
-    await _localNotificationService.show(id, title, body, details,
-        payload: payload);
+    await _localNotificationService.show(id, title, body, details, payload: payload);
   }
 
-  void onDidReceiveLocalNotification(
-      int id, String? title, String? body, String? payload) {
+  void onDidReceiveLocalNotification(int id, String? title, String? body, String? payload) {
     print('id $id');
   }
 

@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:settings_ui/settings_ui.dart';
+
 import 'factory.dart';
 import 'fetcher.dart';
 import 'settings.dart';
@@ -121,12 +125,13 @@ class MessageListWidget extends StatefulWidget {
 }
 
 class _MessageListWidgetState extends State<MessageListWidget> with WidgetsBindingObserver {
-  AppLifecycleState _state = AppLifecycleState.resumed;
+  late AppLifecycleState _state;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    _state = WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.inactive;
+    WidgetsBinding.instance.addObserver(this);
 
     getMessageStream().stream.listen((event) {
       setState(() {});
