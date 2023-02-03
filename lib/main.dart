@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:settings_ui/settings_ui.dart';
-
 import 'factory.dart';
 import 'fetcher.dart';
 import 'settings.dart';

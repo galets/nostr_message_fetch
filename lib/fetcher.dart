@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'package:nostr_client/nostr_client.dart';
-import 'package:nostr_message_fetch/config.dart';
+import 'dart:io';
+import 'package:nostr/nostr.dart';
+
+import 'config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'factory.dart';
@@ -25,8 +27,9 @@ class SecureMessage {
 class Fetcher {
   var messages = Map<String, SecureMessage>();
 
-  late Relay _relay;
+  late WebSocket _relay;
   late Config _config;
+  final _subscriptionId = generate64RandomHexChars();
 
   List<SecureMessage> getMessages() {
     return messages.values.toList();
@@ -53,6 +56,7 @@ class Fetcher {
       }
     } catch (e) {
       print(e);
+      rethrow;
     }
   }
 
@@ -68,20 +72,33 @@ class Fetcher {
     }
 
     _config = config;
-    _relay = Relay(_config.relay);
     final nip04 = Nip04(_config.privateKey);
 
     await _restoreMessages();
 
     print('starting fetcher...');
-    _relay.connect();
+    _relay = await WebSocket.connect(
+      _config.relay, // or any nostr relay
+    );
 
-    final filter = Filter(
-        kinds: [4],
-        p: [getPublicKeyFromPrivate(_config.privateKey)],
-        authors: _config.senders.isEmpty ? null : _config.senders.keys.toList());
+    final filter = Request(_subscriptionId, [
+      Filter(
+          kinds: [4],
+          p: [getPublicKeyFromPrivate(_config.privateKey)],
+          authors: _config.senders.isEmpty ? null : _config.senders.keys.toList())
+    ]);
 
-    _relay.stream.whereIsEvent().listen((event) async {
+    _relay.add(filter.serialize());
+    await Future.delayed(Duration(seconds: 1));
+
+    _relay.listen((payload) async {
+      print('Received event: $payload');
+      final message = Message.deserialize(payload);
+      if (message.type != "EVENT") {
+        return;
+      }
+
+      final event = message.message as Event;
       print('Received event from: ${event.pubkey}');
 
       try {
@@ -102,7 +119,7 @@ class Fetcher {
 
         final text = nip04.decryptContent(event);
 
-        var msg = SecureMessage(event.id, event.createdAt, from, text);
+        var msg = SecureMessage(event.id, DateTime.fromMicrosecondsSinceEpoch(event.createdAt), from, text);
         messages[event.id] = msg;
         getMessageStream().add(msg);
 
@@ -112,21 +129,19 @@ class Fetcher {
       }
     });
 
-    print('subing');
-    final subscriptionId = _relay.subscribe(filter);
-    print('suid $subscriptionId');
+    print('subscribed with id $_subscriptionId');
 
     return true;
   }
 
   Future<void> stop() async {
-    if (_relay.isConnected) {
-      await _relay.disconnect();
+    if (_relay.readyState == WebSocket.open) {
+      await _relay.close();
     }
   }
 
   Future<void> refreshConnection() async {
-    if (!_relay.isConnected) {
+    if (_relay.readyState != WebSocket.open) {
       print("Relay was disconnected, will restart");
       await stop();
       await start(await loadConfig());

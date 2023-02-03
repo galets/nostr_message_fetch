@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:kepler/kepler.dart';
 import 'package:kepler/src/operator.dart';
-import 'package:nostr_client/nostr_client.dart';
+import 'package:nostr/nostr.dart';
 import "package:pointycastle/export.dart";
 
 class Nip04 {
