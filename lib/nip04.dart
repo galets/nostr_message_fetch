@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:kepler/kepler.dart';
-import 'package:kepler/src/operator.dart';
 import 'package:nostr/nostr.dart';
 import "package:pointycastle/export.dart";
 
@@ -53,7 +52,7 @@ String generatePrivateKey() {
 String getPublicKeyFromPrivate(String privateKey) {
   var keyParams = ECCurve_secp256k1();
   final kp = Kepler.loadPrivateKey(privateKey);
-  final ECPoint q = scalarMultiple(kp.d!, keyParams.G);
+  final q = ECCurve_secp256k1().G * kp.d;
   final publicKey = ECPublicKey(q, keyParams);
   return Kepler.strinifyPublicKey(publicKey).substring(2);
 }
